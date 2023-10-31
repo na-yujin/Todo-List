@@ -8,9 +8,14 @@ export default function TodoListPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [todo, setTodo] = useState<string>('');
   const [todos, setTodos] = useState<TodoList[]>([]);
+  const [editState, setEditState] = useState<boolean>(false);
+  const [editTodo, setEditTodo] = useState<string>('');
   const [listId, setListId] = useState<number>(0);
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setTodo(event.target.value);
+  };
+  const onEditChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setEditTodo(event.target.value);
   };
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -19,17 +24,18 @@ export default function TodoListPage() {
     }
     setTodos([{ id: listId, text: todo }, ...todos]);
     setListId((listId) => listId + 1);
-    reset();
+    setTodo('');
   };
   const onRemove = (id: number) => {
     setTodos(todos.filter((todo) => todo.id !== id));
   };
+  const onEdit = (id: number) => {
+    const changeState = () => setEditState(true);
+    changeState();
+  };
   useEffect(() => {
     setLoading(false);
   }, []);
-  const reset = () => {
-    setTodo('');
-  };
   return (
     <div>
       {loading ? (
@@ -67,9 +73,17 @@ export default function TodoListPage() {
               <ContentItemWrapper style={{ listStyle: 'none' }}>
                 {todos.map((item) => (
                   <ContentItem key={item.id}>
-                    <div>{item.text}</div>
+                    <div>
+                      {editState ? (
+                        <input value={editTodo} onChange={onEditChange} />
+                      ) : (
+                        <div>{item.text}</div>
+                      )}
+                    </div>
                     <ButtonWrapper>
-                      <ButtonSub>수정</ButtonSub>
+                      <ButtonSub onClick={() => onEdit(item.id)}>
+                        수정
+                      </ButtonSub>
                       <ButtonSub onClick={() => onRemove(item.id)}>
                         삭제
                       </ButtonSub>
