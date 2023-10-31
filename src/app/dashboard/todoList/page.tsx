@@ -1,6 +1,7 @@
 'use client';
 import styled from 'styled-components';
 import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
 
 type TodoList = { id: number; text: string };
 export default function TodoListPage() {
@@ -16,7 +17,6 @@ export default function TodoListPage() {
     if (todo === '') {
       return;
     }
-    // setTodos((currentArray) => [todo, ...currentArray]);
     setTodos([{ id: listId, text: todo }, ...todos]);
     setListId((listId) => listId + 1);
     reset();
@@ -47,7 +47,21 @@ export default function TodoListPage() {
                 placeholder="입력해주세요"
                 onChange={onChange}
               />
-              <Button>전송!</Button>
+              <Button>
+                <Image
+                  src="/gosim.png"
+                  width={30}
+                  height={30}
+                  alt="Picture of the author"
+                />
+                <div>전송!</div>
+                <Image
+                  src="/gosim.png"
+                  width={30}
+                  height={30}
+                  alt="Picture of the author"
+                />
+              </Button>
             </InputWrapper>
             <div>
               <ContentItemWrapper style={{ listStyle: 'none' }}>
@@ -113,6 +127,15 @@ const Button = styled.button`
   flex-grow: 1;
   width: 0;
   cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  transition: 0.3s all;
+
+  &:active {
+    background: #179892;
+  }
 `;
 const ContentItemWrapper = styled.div`
   display: flex;
