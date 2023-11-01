@@ -2,36 +2,58 @@
 import styled from 'styled-components';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-
-type TodoList = { id: number; text: string };
+import { func } from 'prop-types';
+type TodoList = { id: number; text: string; completed: boolean };
 export default function TodoListPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [todo, setTodo] = useState<string>('');
   const [todos, setTodos] = useState<TodoList[]>([]);
   const [editState, setEditState] = useState<boolean>(false);
   const [editTodo, setEditTodo] = useState<string>('');
+  const [editTodos, setEditTodos] = useState<TodoList[]>([]);
   const [listId, setListId] = useState<number>(0);
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setTodo(event.target.value);
+    const editChange = (id: number) => {
+      setTodos(todos.filter((todo) => todo.id === id));
+    };
+    if (editState === true) {
+      editChange;
+      setEditTodo(event.target.value);
+    } else {
+      setTodo(event.target.value);
+    }
   };
-  const onEditChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setEditTodo(event.target.value);
-  };
+  // const onEditChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  //   setEditTodo(event.target.value);
+  // };
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (todo === '') {
       return;
     }
-    setTodos([{ id: listId, text: todo }, ...todos]);
+    setTodos([...todos, { id: listId, text: todo, completed: false }]);
     setListId((listId) => listId + 1);
     setTodo('');
+    // setEditTodos(id, newText);
+    setTodo('');
+    setEditState(false);
   };
   const onRemove = (id: number) => {
     setTodos(todos.filter((todo) => todo.id !== id));
   };
-  const onEdit = (id: number) => {
-    const changeState = () => setEditState(true);
-    changeState();
+  const onEdit = (id: number, newText: string) => {
+    setEditState(!editState);
+
+    // setTodos(setEditTodos);
+    // const editTodoList = todos.map((todo) => {});
+    // if (editState === true) {
+    // }
+    // const changeState = () => setEditState(!editState);
+    // changeState();
+    // console.log(onEditChange);
+  };
+  const toggleTaskComponented = (id: number) => {
+    console.log(id);
   };
   useEffect(() => {
     setLoading(false);
@@ -44,7 +66,9 @@ export default function TodoListPage() {
         </h1>
       ) : (
         <TodoListWrapper>
-          <Title>Todo-List</Title>
+          <Title>
+            Todo-List <span>({todos.length}개의 할 일이 있음)</span>
+          </Title>
           <TodoListInner>
             <InputWrapper onSubmit={onSubmit}>
               <Input
@@ -70,16 +94,32 @@ export default function TodoListPage() {
               </Button>
             </InputWrapper>
             <div>
-              <ContentItemWrapper style={{ listStyle: 'none' }}>
+              <ContentItemWrapper>
                 {todos.map((item) => (
                   <ContentItem key={item.id}>
                     <div>
+                      <input
+                        id={item.id}
+                        type="checkbox"
+                        defaultChecked={item.completed}
+                        onChange={() => toggleTaskComponented(item.id)}
+                      />
                       {editState ? (
-                        <input value={editTodo} onChange={onEditChange} />
+                        <input
+                          value={editTodo}
+                          id={item.id}
+                          type="text"
+                          onChange={onChange}
+                          placeholder="수정해주세요"
+                        />
                       ) : (
-                        <div>{item.text}</div>
+                        <div>
+                          <label htmlFor={item.id}>{item.text}</label>
+                        </div>
                       )}
                     </div>
+                    <DefaultForm />
+                    <EditForm />
                     <ButtonWrapper>
                       <ButtonSub onClick={() => onEdit(item.id)}>
                         수정
@@ -87,7 +127,7 @@ export default function TodoListPage() {
                       <ButtonSub onClick={() => onRemove(item.id)}>
                         삭제
                       </ButtonSub>
-                      {/*{item.id}*/}
+                      {item.id}
                     </ButtonWrapper>
                   </ContentItem>
                 ))}
@@ -99,6 +139,61 @@ export default function TodoListPage() {
     </div>
   );
 }
+
+function DefaultForm() {
+  return (
+    <div>
+      <form>
+        <div>
+          <div>
+            asd
+            {/*<input*/}
+            {/*  id={item.id}*/}
+            {/*  type="checkbox"*/}
+            {/*  defaultChecked={item.completed}*/}
+            {/*  onChange={() => toggleTaskComponented(item.id)}*/}
+            {/*/>*/}
+            {/*<div>*/}
+            {/*  <label htmlFor={item.id}>{item.text}</label>*/}
+            {/*</div>*/}
+          </div>
+          <ButtonWrapper>
+            <ButtonSub>수정</ButtonSub>
+            <ButtonSub>삭제</ButtonSub>
+          </ButtonWrapper>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function EditForm() {
+  return (
+    <div>
+      <form>
+        <div>
+          <div>
+            <input
+              id={item.id}
+              type="checkbox"
+              defaultChecked={item.completed}
+              onChange={() => toggleTaskComponented(item.id)}
+            />
+            <input
+              value={editTodo}
+              id={item.id}
+              type="text"
+              onChange={onChange}
+              placeholder="수정해주세요"
+            />
+          </div>
+          <div></div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 const TodoListWrapper = styled.div`
   width: 800px;
   margin: 0 auto;
@@ -108,6 +203,13 @@ const Title = styled.h2`
   font-size: 22px;
   text-align: center;
   margin-bottom: 40px;
+
+  > span {
+    font-size: 16px;
+    font-weight: 400;
+    color: #505050;
+    letter-spacing: -0.05rem;
+  }
 `;
 const TodoListInner = styled.div`
   display: flex;
@@ -155,27 +257,32 @@ const ContentItemWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: 10px;
+  list-style: none;
 `;
 const ContentItem = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 10px 30px 10px 30px;
+  padding: 10px 30px 10px 20px;
   border-radius: 8px;
   background: #f3e8c7;
   color: #222;
-  &:before {
-    content: '▶';
-    font-size: 12px;
-    position: absolute;
-    transform: translateX(-20px);
+  //&:before {
+  //  content: '▶';
+  //  font-size: 12px;
+  //  position: absolute;
+  //  transform: translateX(-20px);
+  //}
+  > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
   }
 `;
 const ButtonWrapper = styled.div`
   display: flex;
-  gap: 4px;
 `;
 const ButtonSub = styled.button`
-  padding: 5px;
+  padding: 5px 10px;
   border-radius: 8px;
   background: #ffb01b;
   color: #fff;
