@@ -2,30 +2,17 @@
 import styled from 'styled-components';
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { func } from 'prop-types';
 type TodoList = { id: number; text: string; completed: boolean };
 export default function TodoListPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [todo, setTodo] = useState<string>('');
   const [todos, setTodos] = useState<TodoList[]>([]);
-  const [editState, setEditState] = useState<boolean>(false);
+  const [editState, setEditState] = useState<number | null>(null);
   const [editTodo, setEditTodo] = useState<string>('');
-  const [editTodos, setEditTodos] = useState<TodoList[]>([]);
   const [listId, setListId] = useState<number>(0);
   const onChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const editChange = (id: number) => {
-      setTodos(todos.filter((todo) => todo.id === id));
-    };
-    if (editState === true) {
-      editChange;
-      setEditTodo(event.target.value);
-    } else {
-      setTodo(event.target.value);
-    }
+    setTodo(event.target.value);
   };
-  // const onEditChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-  //   setEditTodo(event.target.value);
-  // };
   const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (todo === '') {
@@ -34,26 +21,28 @@ export default function TodoListPage() {
     setTodos([...todos, { id: listId, text: todo, completed: false }]);
     setListId((listId) => listId + 1);
     setTodo('');
-    // setEditTodos(id, newText);
-    setTodo('');
-    setEditState(false);
   };
   const onRemove = (id: number) => {
     setTodos(todos.filter((todo) => todo.id !== id));
   };
   const onEdit = (id: number, newText: string) => {
-    setEditState(!editState);
-
-    // setTodos(setEditTodos);
-    // const editTodoList = todos.map((todo) => {});
-    // if (editState === true) {
-    // }
-    // const changeState = () => setEditState(!editState);
-    // changeState();
-    // console.log(onEditChange);
+    setEditState(id);
+    setEditTodo(newText);
   };
-  const toggleTaskComponented = (id: number) => {
-    console.log(id);
+  const onSave = (id: number) => {
+    setTodos((event) =>
+      event.map((todo) =>
+        todo.id === id ? { ...todo, text: editTodo } : todo,
+      ),
+    );
+    setEditState(null);
+  };
+  const toggleTaskCompleted = (id: number) => {
+    setTodos((event) =>
+      event.map((todo) =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo,
+      ),
+    );
   };
   useEffect(() => {
     setLoading(false);
@@ -97,38 +86,20 @@ export default function TodoListPage() {
               <ContentItemWrapper>
                 {todos.map((item) => (
                   <ContentItem key={item.id}>
-                    <div>
-                      <input
-                        id={item.id}
-                        type="checkbox"
-                        defaultChecked={item.completed}
-                        onChange={() => toggleTaskComponented(item.id)}
+                    {editState === item.id ? (
+                      <EditForm
+                        text={editTodo}
+                        onChange={(event) => setEditTodo(event.target.value)}
+                        onSave={() => onSave(item.id)}
                       />
-                      {editState ? (
-                        <input
-                          value={editTodo}
-                          id={item.id}
-                          type="text"
-                          onChange={onChange}
-                          placeholder="수정해주세요"
-                        />
-                      ) : (
-                        <div>
-                          <label htmlFor={item.id}>{item.text}</label>
-                        </div>
-                      )}
-                    </div>
-                    <DefaultForm />
-                    <EditForm />
-                    <ButtonWrapper>
-                      <ButtonSub onClick={() => onEdit(item.id)}>
-                        수정
-                      </ButtonSub>
-                      <ButtonSub onClick={() => onRemove(item.id)}>
-                        삭제
-                      </ButtonSub>
-                      {item.id}
-                    </ButtonWrapper>
+                    ) : (
+                      <DefaultForm
+                        item={item}
+                        onEdit={() => onEdit(item.id, item.text)}
+                        onRemove={() => onRemove(item.id)}
+                        onToggleTask={() => toggleTaskCompleted(item.id)}
+                      />
+                    )}
                   </ContentItem>
                 ))}
               </ContentItemWrapper>
@@ -140,57 +111,60 @@ export default function TodoListPage() {
   );
 }
 
-function DefaultForm() {
+type DefaultFormProps = {
+  item: TodoList;
+  onEdit: () => void;
+  onRemove: () => void;
+  onToggleTask: () => void;
+};
+
+function DefaultForm(props: DefaultFormProps) {
+  const { item, onEdit, onRemove, onToggleTask } = props;
   return (
-    <div>
-      <form>
+    <TodoItemWrapper>
+      <div>
+        <input
+          id={item.id.toString()}
+          type="checkbox"
+          defaultChecked={item.completed}
+          onChange={onToggleTask}
+        />
         <div>
-          <div>
-            asd
-            {/*<input*/}
-            {/*  id={item.id}*/}
-            {/*  type="checkbox"*/}
-            {/*  defaultChecked={item.completed}*/}
-            {/*  onChange={() => toggleTaskComponented(item.id)}*/}
-            {/*/>*/}
-            {/*<div>*/}
-            {/*  <label htmlFor={item.id}>{item.text}</label>*/}
-            {/*</div>*/}
-          </div>
-          <ButtonWrapper>
-            <ButtonSub>수정</ButtonSub>
-            <ButtonSub>삭제</ButtonSub>
-          </ButtonWrapper>
+          <label htmlFor={item.id.toString()}>{item.text}</label>
         </div>
-      </form>
-    </div>
+      </div>
+      <ButtonWrapper>
+        <ButtonSub onClick={onEdit}>수정</ButtonSub>
+        <ButtonSub onClick={onRemove}>삭제</ButtonSub>
+        {/*{item.id}*/}
+      </ButtonWrapper>
+    </TodoItemWrapper>
   );
 }
 
-function EditForm() {
+type EditFormProps = {
+  text: string;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  onSave: () => void;
+};
+
+function EditForm(props: EditFormProps) {
+  const { text, onChange, onSave } = props;
+
   return (
-    <div>
-      <form>
-        <div>
-          <div>
-            <input
-              id={item.id}
-              type="checkbox"
-              defaultChecked={item.completed}
-              onChange={() => toggleTaskComponented(item.id)}
-            />
-            <input
-              value={editTodo}
-              id={item.id}
-              type="text"
-              onChange={onChange}
-              placeholder="수정해주세요"
-            />
-          </div>
-          <div></div>
-        </div>
-      </form>
-    </div>
+    <TodoItemWrapper>
+      <div>
+        <input
+          type="text"
+          value={text}
+          onChange={onChange}
+          placeholder="수정해주세요"
+        />
+      </div>
+      <ButtonWrapper>
+        <ButtonSub onClick={onSave}>저장</ButtonSub>
+      </ButtonWrapper>
+    </TodoItemWrapper>
   );
 }
 
@@ -289,4 +263,15 @@ const ButtonSub = styled.button`
   border: none;
   font-weight: 700;
   cursor: pointer;
+`;
+
+const TodoItemWrapper = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  > div {
+    display: flex;
+    gap: 4px;
+  }
 `;
